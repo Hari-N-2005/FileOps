@@ -1,0 +1,13 @@
+# User Settings Example
+# Copy this file to user_settings.txt and edit with your actual information
+# These values will automatically replace placeholders in config.yaml
+
+# Your Windows username (e.g., John, Sarah, Admin)
+USERNAME=YourUsername
+
+# Optional: Custom base paths (leave as-is to use defaults)
+# DOWNLOADS_PATH=C:/Users/{USERNAME}/Downloads
+# DOCUMENTS_PATH=C:/Users/{USERNAME}/Documents
+# DESKTOP_PATH=C:/Users/{USERNAME}/Desktop
+# PICTURES_PATH=C:/Users/{USERNAME}/Pictures
+# VIDEOS_PATH=C:/Users/{USERNAME}/Videos

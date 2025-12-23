@@ -1,0 +1,53 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+venv/
+env/
+ENV/
+.venv
+*.egg-info/
+dist/
+build/
+
+# Logs (contains file paths and operations)
+logs/*.log
+logs/automation.log
+
+# Configuration files (contain personal paths and usernames)
+config/config.yaml
+config/user_settings.txt
+
+# Keep example configs in git (these are templates)
+!config/config.example.yaml
+!config/user_settings.example.txt
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Backup files
+*.bak
+*.tmp
+*.temp
+
+# Windows shortcuts (if created)
+*.lnk
+
+# Test files and directories
+test/
+tests/
+*.test
+
+# Any custom user scripts
+scripts/custom_*

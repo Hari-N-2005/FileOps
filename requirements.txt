@@ -1,0 +1,13 @@
+# Personal Automation Engine Dependencies
+
+# File system monitoring
+watchdog>=3.0.0
+
+# Configuration parsing
+PyYAML>=6.0
+
+# Scheduling tasks
+schedule>=1.2.0
+
+# Windows service support (optional)
+pywin32>=305; sys_platform == 'win32'
