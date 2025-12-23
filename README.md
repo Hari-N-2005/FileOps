@@ -25,8 +25,8 @@ A powerful, local background automation system that intelligently organizes your
 
 1. **Clone or download this repository**:
    ```bash
-   git clone https://github.com/Hari-N-2005/idk-pro.git
-   cd idk-pro
+   git clone https://github.com/Hari-N-2005/FileOps.git
+   cd FileOps
    ```
 
 2. **Run the setup script**:
