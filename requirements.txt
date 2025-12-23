@@ -9,5 +9,8 @@ PyYAML>=6.0
 # Scheduling tasks
 schedule>=1.2.0
 
+# GUI (Tkinter is built-in with Python, no extra install needed)
+# Note: On some Linux systems, you may need to install python3-tk separately
+
 # Windows service support (optional)
 pywin32>=305; sys_platform == 'win32'
