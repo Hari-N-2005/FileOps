@@ -18,6 +18,9 @@ from file_watcher import FileWatcher
 from rules_engine import RulesEngine
 from file_organizer import FileOrganizer
 from backup_manager import BackupManager
+from attention_leak_detector import AttentionLeakDetector
+from attention_report_generator import AttentionReportGenerator
+from attention_scheduler import AttentionLeakScheduler
 
 
 class GUIEngineController:
@@ -33,6 +36,9 @@ class GUIEngineController:
         self.rules_engine = None
         self.file_organizer = None
         self.backup_manager = None
+        self.attention_detector = None
+        self.attention_report_generator = None
+        self.attention_scheduler = None
         
         # Statistics tracking
         self.files_processed = 0
@@ -59,15 +65,25 @@ class GUIEngineController:
             rules = self.config.get_organization_rules()
             self.rules_engine = RulesEngine(rules, logger=self.logger)
             
-            # Initialize file watcher
+            # Initialize attention leak detector first (needed for callback)
+            self.attention_detector = AttentionLeakDetector(logger=self.logger)
+            
+            # Initialize file watcher with attention tracking callback
             watched_dirs = self.config.get_watched_directories()
             if watched_dirs:
                 stable_time = self.config.get_file_stable_time()
+                
+                # Create access callback for attention tracking
+                def access_callback(path):
+                    if self.attention_detector:
+                        self.attention_detector.track_file_accessed(path)
+                
                 self.file_watcher = FileWatcher(
                     watched_dirs,
                     self._process_file,
                     stable_time,
-                    logger=self.logger
+                    logger=self.logger,
+                    access_callback=access_callback
                 )
             
             # Initialize backup manager
@@ -76,6 +92,20 @@ class GUIEngineController:
             
             if self.config.is_backup_enabled():
                 self.backup_manager.schedule_backup()
+            
+            # Initialize attention leak report generator and scheduler
+            config_dict = self.config.config_data.get('attention_detector', {})
+            if config_dict.get('enabled', True):
+                report_dir = config_dict.get('report_directory', 'logs/attention_reports')
+                self.attention_report_generator = AttentionReportGenerator(output_dir=report_dir)
+                
+                self.attention_scheduler = AttentionLeakScheduler(
+                    detector=self.attention_detector,
+                    report_generator=self.attention_report_generator,
+                    interval_hours=config_dict.get('analysis_interval_hours', 24),
+                    auto_report=config_dict.get('auto_report', True),
+                    logger=self.logger
+                )
             
             return True
             
@@ -100,6 +130,10 @@ class GUIEngineController:
     def _process_file(self, file_path: str) -> None:
         """Process a detected file"""
         try:
+            # Track file creation for attention leak detection
+            if self.attention_detector:
+                self.attention_detector.track_file_created(file_path)
+            
             if not self.rules_engine.should_process_file(file_path):
                 return
             
@@ -130,6 +164,10 @@ class GUIEngineController:
         if self.file_watcher:
             self.file_watcher.start()
         
+        # Start attention leak scheduler
+        if self.attention_scheduler:
+            self.attention_scheduler.start()
+        
         self.logger.log_engine_status("RUNNING", "Engine started via GUI")
         self._notify_gui("Engine started successfully", "success")
         
@@ -157,6 +195,10 @@ class GUIEngineController:
         
         if self.file_watcher:
             self.file_watcher.stop()
+        
+        # Stop attention leak scheduler
+        if self.attention_scheduler:
+            self.attention_scheduler.stop()
         
         if self.logger:
             self.logger.log_engine_status("STOPPED", "Engine stopped via GUI")
@@ -198,3 +240,25 @@ class GUIEngineController:
         self.rules_engine = RulesEngine(rules, logger=self.logger)
         
         self.logger.info("Configuration reloaded")
+    
+    def get_attention_leaks(self) -> Dict[str, Any]:
+        """Get attention leak analysis"""
+        if self.attention_detector:
+            return self.attention_detector.generate_summary()
+        return {}
+    
+    def get_attention_stats(self) -> Dict[str, Any]:
+        """Get attention tracking statistics"""
+        if self.attention_detector:
+            return self.attention_detector.get_stats()
+        return {}
+    
+    def track_file_access(self, file_path: str) -> None:
+        """Track when a file is accessed (opened)"""
+        if self.attention_detector:
+            self.attention_detector.track_file_accessed(file_path)
+    
+    def cleanup_attention_data(self, days: int = 90) -> None:
+        """Clean up old attention tracking data"""
+        if self.attention_detector:
+            self.attention_detector.cleanup_old_data(days)

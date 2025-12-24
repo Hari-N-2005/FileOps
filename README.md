@@ -1,353 +1,192 @@
-# Personal Automation Engine
+# FileOps - Personal Automation Engine
 
-A powerful, local background automation system that intelligently organizes your files, performs scheduled backups, and maintains detailed activity logs—all running silently in the background to keep your computer tidy and data safe.
+Automated file organization, scheduled backups, and productivity insights running silently in the background.
 
 ## 🚀 Features
 
-- **🗂️ Automatic File Organization**: Monitor directories (Downloads, Desktop, etc.) and automatically sort files by type into designated folders
-- **💾 Scheduled Backups**: Perform full or incremental backups of important directories at scheduled times
-- **📝 Activity Logging**: Comprehensive logging with timestamps for all operations
-- **⚙️ Simple Configuration**: Single YAML file to define all rules and settings
-- **🔄 Real-time Monitoring**: Watches directories continuously for new files
-- **🛡️ Duplicate Handling**: Intelligently handles filename conflicts
-- **⏰ Smart Scheduling**: Built-in scheduler for automated backup tasks
-- **📊 Detailed Logs**: Rotating log files with configurable retention
+- **🗂️ Auto File Organization**: Monitors folders (Downloads, Desktop) and sorts files by type
+- **🧠 Attention Leak Detector**: Identifies productivity losses from clutter, duplicates, and context switching
+- **💾 Scheduled Backups**: Full or incremental backups at scheduled times
+- **📝 Activity Logging**: Comprehensive logs of all operations
+- **🎨 GUI Dashboard**: User-friendly interface with real-time insights
 
-## 📋 Prerequisites
+## 📋 Quick Start
 
-- **Python 3.7+** (Python 3.9+ recommended)
-- **Windows OS** (primary support)
-- Administrator privileges (for some features)
+See **[EASY_SETUP.md](EASY_SETUP.md)** for detailed installation instructions.
 
-## 🔧 Installation
+```bash
+git clone https://github.com/Hari-N-2005/FileOps.git
+cd FileOps
+python setup.py
+```
 
-### Option 1: Automated Setup (Recommended)
+Edit `config/config.yaml` to set your paths, then run:
+```bash
+python main_gui.py
+```
 
-1. **Clone or download this repository**:
-   ```bash
-   git clone https://github.com/Hari-N-2005/FileOps.git
-   cd FileOps
-   ```
+## 🔧 Core Features
 
-2. **Run the setup script**:
-   ```bash
-   python setup.py
-   ```
-   
-   The setup will:
-   - Check Python version
-   - Install all dependencies
-   - Create configuration file
-   - Optionally create desktop shortcut
-   - Optionally set up auto-start on Windows login
+### 1. Automatic File Organization
 
-3. **Edit the configuration**:
-   ```bash
-   notepad config\config.yaml
-   ```
-   Update paths to match your system (replace `YourUsername` with your actual username)
+**How it works:** Watches specified directories and moves files based on extension rules.
 
-### Option 2: Manual Setup
-
-1. **Install dependencies**:
-   ```bash
-   pip install -r requirements.txt
-   ```
-
-2. **Create configuration**:
-   ```bash
-   copy config\config.example.yaml config\config.yaml
-   ```
-
-3. **Edit configuration** with your preferred text editor
-
-## ⚙️ Configuration
-
-The `config/config.yaml` file controls all automation behavior. Key sections:
-
-### Watched Directories
-Define which folders to monitor:
+**Example config:**
 ```yaml
 watched_directories:
-  - path: "C:/Users/YourUsername/Downloads"
+  - path: "C:/Users/YourName/Downloads"
     enabled: true
-  - path: "C:/Users/YourUsername/Desktop"
-    enabled: true
-```
 
-### Organization Rules
-Define how files should be organized:
-```yaml
 organization_rules:
-  - name: "Organize Documents"
-    file_types: [".pdf", ".docx", ".doc", ".txt"]
-    destination: "C:/Users/YourUsername/Documents/Organized"
+  - name: "Documents"
+    file_types: [".pdf", ".docx", ".txt"]
+    destination: "C:/Users/YourName/Documents/Organized"
     enabled: true
 ```
 
-### Backup Configuration
-Set up automated backups:
+**Result:** New PDFs/documents in Downloads → automatically moved to Documents/Organized
+
+### 2. Scheduled Backups
+
+**How it works:** Performs backups at specified times. Supports full and incremental modes.
+
+**Example config:**
 ```yaml
 backup:
   enabled: true
   source_directories:
-    - "C:/Users/YourUsername/Documents"
+    - "C:/Users/YourName/Documents"
   destination: "D:/Backups"
-  schedule_time: "23:00"  # Daily at 11 PM
-  type: "incremental"     # or "full"
-  retention_days: 30      # Keep backups for 30 days
+  schedule_time: "23:00"
+  type: "incremental"
+  retention_days: 30
 ```
 
-### Logging Settings
-Configure logging behavior:
+**Result:** Daily backups at 11 PM, keeping 30 days of history
+
+### 3. Attention Leak Detector
+
+**How it works:** Tracks file activity and identifies productivity losses:
+- ❄️ **Cold Files**: Created but never opened
+- 📥 **Duplicates**: Same file downloaded multiple times  
+- 🗂️ **Micro-Clutter**: Too many small files in folders
+- 🔄 **Context Switching**: Frequent folder jumping
+- 📁 **Orphaned Folders**: Inactive folders creating noise
+
+**Usage:**
+1. Click "🧠 Attention Insights" in GUI
+2. Run analysis to see detected leaks
+3. Export reports with actionable suggestions
+
+**Example config:**
 ```yaml
-logging:
-  log_file: "logs/automation.log"
-  level: "INFO"           # DEBUG, INFO, WARNING, ERROR
-  max_size_mb: 10
-  backup_count: 5
+attention_detector:
+  enabled: true
+  analysis_interval_hours: 24
+  cold_file_days: 7
+  auto_report: true
+```
+
+**Result:** Daily reports showing time wasted and specific improvements
+
+## ⚙️ Configuration
+
+All settings in `config/config.yaml`:
+
+```yaml
+# Watch folders for new files
+watched_directories:
+  - path: "C:/Users/YourName/Downloads"
+    enabled: true
+
+# Define organization rules
+organization_rules:
+  - name: "Images"
+    file_types: [".jpg", ".png", ".gif"]
+    destination: "C:/Users/YourName/Pictures/Auto"
+    enabled: true
+
+# Configure backups
+backup:
+  enabled: true
+  source_directories: ["C:/Users/YourName/Documents"]
+  destination: "D:/Backups"
+  schedule_time: "23:00"
+  type: "incremental"
+  retention_days: 30
+
+# Attention detector settings
+attention_detector:
+  enabled: true
+  analysis_interval_hours: 24
+  cold_file_days: 7
+  micro_clutter_threshold: 50
+  context_switch_threshold: 10
+  auto_report: true
 ```
 
 ## 🎯 Usage
 
-### Starting the Engine
-
-**Option 1: Double-click the batch file**
+**GUI Mode (Recommended):**
+```bash
+python main_gui.py
 ```
-run.bat
-```
+- Click "▶ Start Engine"
+- Monitor activity in real-time
+- Access attention insights
+- View logs and stats
 
-**Option 2: Run directly with Python**
+**CLI Mode:**
 ```bash
 python main.py
 ```
 
-**Option 3: Use the desktop shortcut** (if created during setup)
-
-### Stopping the Engine
-
-Press `Ctrl+C` in the terminal window, or close the window for graceful shutdown.
-
-### Running as Background Service
-
-For Windows startup, use the setup script's auto-start option, or manually place a shortcut to `run.bat` in your Startup folder:
+**Background Service:**
+Place shortcut in Startup folder:
 ```
 %APPDATA%\Microsoft\Windows\Start Menu\Programs\Startup
 ```
 
 ## 📊 How It Works
 
-```
-┌─────────────────────────────────────────────────────────┐
-│                   Configuration File                     │
-│              (config/config.yaml)                        │
-└─────────────────┬───────────────────────────────────────┘
-                  │
-                  ▼
-┌─────────────────────────────────────────────────────────┐
-│              Automation Engine Starts                    │
-└─────────────────┬───────────────────────────────────────┘
-                  │
-      ┌───────────┴───────────┐
-      │                       │
-      ▼                       ▼
-┌─────────────┐      ┌─────────────────┐
-│File Watcher │      │Backup Scheduler │
-│ (Real-time) │      │   (Scheduled)   │
-└──────┬──────┘      └────────┬────────┘
-       │                      │
-       ▼                      ▼
-┌──────────────┐      ┌─────────────┐
-│ Rules Engine │      │   Backup    │
-│  (Evaluate)  │      │  Manager    │
-└──────┬───────┘      └──────┬──────┘
-       │                     │
-       ▼                     │
-┌─────────────┐              │
-│   File      │              │
-│ Organizer   │◄─────────────┘
-└──────┬──────┘
-       │
-       ▼
-┌─────────────────┐
-│  Activity Log   │
-│ (All Actions)   │
-└─────────────────┘
-```
-
-### Workflow:
-
-1. **Configuration Loading**: Engine reads `config.yaml` on startup
-2. **File Monitoring**: Watchdog monitors specified directories in real-time
-3. **File Detection**: New files trigger the rules engine
-4. **Rule Evaluation**: File extension/name matches against defined rules
-5. **File Organization**: Matched files moved to appropriate destinations
-6. **Backup Execution**: Scheduled backups run at configured time
-7. **Logging**: All operations recorded with timestamps
-
-## 📁 Project Structure
-
-```
-idk-pro/
-├── main.py                 # Main entry point
-├── setup.py                # Setup and installation script
-├── run.bat                 # Quick start batch file
-├── requirements.txt        # Python dependencies
-├── README.md              # This file
-├── LICENSE                # License information
-├── .gitignore            # Git ignore rules
-├── config/
-│   ├── config.example.yaml  # Example configuration
-│   └── config.yaml          # Your configuration (create this)
-├── src/
-│   ├── __init__.py
-│   ├── config_manager.py    # Configuration loader
-│   ├── logger.py            # Logging system
-│   ├── file_watcher.py      # Directory monitoring
-│   ├── rules_engine.py      # Rule evaluation
-│   ├── file_organizer.py    # File operations
-│   └── backup_manager.py    # Backup functionality
-└── logs/
-    └── automation.log       # Activity logs (created on first run)
-```
-
-## 🔍 Examples
-
-### Example 1: Organize Downloads
-
-**Scenario**: Automatically sort downloaded files into folders
-
-**Configuration**:
-```yaml
-watched_directories:
-  - path: "C:/Users/John/Downloads"
-    enabled: true
-
-organization_rules:
-  - name: "PDFs to Documents"
-    file_types: [".pdf"]
-    destination: "C:/Users/John/Documents/PDFs"
-    enabled: true
-```
-
-**Result**: Any PDF downloaded goes straight to Documents/PDFs
-
-### Example 2: Daily Photo Backup
-
-**Scenario**: Backup photos every night at midnight
-
-**Configuration**:
-```yaml
-backup:
-  enabled: true
-  source_directories:
-    - "C:/Users/John/Pictures"
-  destination: "E:/PhotoBackups"
-  schedule_time: "00:00"
-  type: "incremental"
-  retention_days: 90
-```
-
-**Result**: Incremental backups of Pictures folder, keeping 90 days of history
-
-### Example 3: Multi-directory Organization
-
-**Scenario**: Monitor both Downloads and Desktop, sort multiple file types
-
-**Configuration**:
-```yaml
-watched_directories:
-  - path: "C:/Users/John/Downloads"
-    enabled: true
-  - path: "C:/Users/John/Desktop"
-    enabled: true
-
-organization_rules:
-  - name: "Images"
-    file_types: [".jpg", ".png", ".gif"]
-    destination: "C:/Users/John/Pictures/Auto"
-    enabled: true
-  
-  - name: "Videos"
-    file_types: [".mp4", ".avi", ".mkv"]
-    destination: "C:/Users/John/Videos/Auto"
-    enabled: true
-  
-  - name: "Archives"
-    file_types: [".zip", ".rar", ".7z"]
-    destination: "C:/Users/John/Documents/Archives"
-    enabled: true
-```
-
-## 📝 Logs
-
-Activity logs are stored in `logs/automation.log` with the following format:
-
-```
-2025-12-23 14:30:45 - AutomationEngine - INFO - [ENGINE-STARTED] Personal Automation Engine initializing
-2025-12-23 14:30:46 - AutomationEngine - INFO - [MOVE] SUCCESS | C:/Users/John/Downloads/report.pdf -> C:/Users/John/Documents/Organized/report.pdf
-2025-12-23 23:00:00 - AutomationEngine - INFO - [BACKUP-INCREMENTAL] SUCCESS | Sources: C:/Users/John/Documents | Destination: D:/Backups/backup_20251223_230000 | Files: 145
-```
-
-## ❓ FAQ
-
-**Q: Does this work on Mac/Linux?**  
-A: The core functionality is cross-platform, but setup scripts are optimized for Windows. You can manually configure it on other systems.
-
-**Q: Will it move files that are still downloading?**  
-A: No, the engine waits for files to be stable (default 2 seconds) before processing.
-
-**Q: Can I undo file moves?**  
-A: Check the logs to see where files were moved. Manual restoration is required.
-
-**Q: How much disk space do backups use?**  
-A: Incremental backups only copy changed files. Full backups copy everything. Set `retention_days` to limit storage.
-
-**Q: Can I run multiple instances?**  
-A: Not recommended. Use one instance with multiple watched directories instead.
+1. **Configuration** → Engine reads `config.yaml`
+2. **Monitoring** → Watches directories for new files
+3. **Detection** → New files trigger rule evaluation
+4. **Organization** → Files moved to destinations
+5. **Tracking** → Activity logged + attention patterns recorded
+6. **Scheduling** → Backups run at specified times
+7. **Analysis** → Periodic attention leak reports
 
 ## 🛠️ Troubleshooting
 
-### Engine won't start
-- Verify Python 3.7+ is installed: `python --version`
-- Check `config/config.yaml` exists
-- Review logs in `logs/automation.log`
+**Engine won't start:**
+- Verify Python 3.7+: `python --version`
+- Ensure `config/config.yaml` exists
+- Check logs in `logs/automation.log`
 
-### Files not being organized
-- Verify directories exist and are accessible
+**Files not organizing:**
+- Verify paths exist and are accessible
 - Check file extensions match rules
 - Ensure rules are `enabled: true`
-- Check logs for errors
 
-### Backup not running
-- Verify `backup.enabled: true` in config
-- Check schedule_time format (24-hour: "HH:MM")
-- Ensure source and destination directories exist
-- Review logs around scheduled time
+**Backups not running:**
+- Verify `backup.enabled: true`
+- Check time format: "HH:MM" (24-hour)
+- Ensure source and destination exist
 
-### Permission errors
-- Run as administrator if accessing system folders
-- Check folder permissions
-- Verify antivirus isn't blocking
+## 📚 Documentation
 
-## 🤝 Contributing
-
-Contributions are welcome! Please feel free to submit issues, fork the repository, and create pull requests.
+- **[EASY_SETUP.md](EASY_SETUP.md)** - Installation guide
+- **[GUI_GUIDE.md](GUI_GUIDE.md)** - GUI usage instructions
+- **[QUICKSTART.md](QUICKSTART.md)** - Quick reference
 
 ## 📄 License
 
-This project is licensed under the terms in the LICENSE file.
+See LICENSE file for details.
 
 ## 🙏 Acknowledgments
 
-- **watchdog**: File system monitoring
-- **PyYAML**: Configuration parsing
-- **schedule**: Task scheduling
-- **pywin32**: Windows integration
-
-## 📧 Support
-
-For issues, questions, or suggestions, please open an issue on GitHub.
+Built with: watchdog, PyYAML, schedule, pywin32
 
 ---
 

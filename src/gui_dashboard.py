@@ -189,6 +189,14 @@ class AutomationDashboard:
             command=self._reload_config,
             width=20
         ).grid(row=0, column=3, padx=5)
+        
+        # Attention Leak Insights button
+        ttk.Button(
+            button_frame,
+            text="🧠 Attention Insights",
+            command=self._show_attention_insights,
+            width=20
+        ).grid(row=0, column=4, padx=5)
     
     def _toggle_engine(self):
         """Toggle engine start/stop"""
@@ -305,3 +313,226 @@ class AutomationDashboard:
                 self.root.destroy()
         else:
             self.root.destroy()
+    
+    def _show_attention_insights(self):
+        """Show attention leak insights in a new window"""
+        insights_window = tk.Toplevel(self.root)
+        insights_window.title("Attention Leak Insights")
+        insights_window.geometry("1000x700")
+        
+        # Main frame
+        main_frame = ttk.Frame(insights_window, padding="10")
+        main_frame.pack(fill=tk.BOTH, expand=True)
+        
+        # Title
+        title_label = ttk.Label(
+            main_frame,
+            text="🧠 Attention Leak Detection",
+            font=("Arial", 14, "bold")
+        )
+        title_label.pack(pady=(0, 10))
+        
+        # Notebook for tabs
+        notebook = ttk.Notebook(main_frame)
+        notebook.pack(fill=tk.BOTH, expand=True, pady=5)
+        
+        # Summary Tab
+        summary_frame = ttk.Frame(notebook, padding="10")
+        notebook.add(summary_frame, text="Summary")
+        
+        # Detailed Leaks Tab
+        leaks_frame = ttk.Frame(notebook, padding="10")
+        notebook.add(leaks_frame, text="Detailed Leaks")
+        
+        # Statistics Tab
+        stats_frame = ttk.Frame(notebook, padding="10")
+        notebook.add(stats_frame, text="Statistics")
+        
+        # Button frame
+        button_frame = ttk.Frame(main_frame)
+        button_frame.pack(pady=10)
+        
+        # Analyze button
+        analyze_btn = ttk.Button(
+            button_frame,
+            text="🔍 Analyze Now",
+            command=lambda: self._run_attention_analysis(
+                summary_text, leaks_text, stats_text, analyze_btn
+            )
+        )
+        analyze_btn.pack(side=tk.LEFT, padx=5)
+        
+        # Export report button
+        ttk.Button(
+            button_frame,
+            text="📄 Export Report",
+            command=lambda: self._export_attention_report()
+        ).pack(side=tk.LEFT, padx=5)
+        
+        # Close button
+        ttk.Button(
+            button_frame,
+            text="Close",
+            command=insights_window.destroy
+        ).pack(side=tk.LEFT, padx=5)
+        
+        # Create text widgets for each tab
+        # Summary text
+        summary_text = scrolledtext.ScrolledText(
+            summary_frame,
+            wrap=tk.WORD,
+            font=("Consolas", 10),
+            height=30
+        )
+        summary_text.pack(fill=tk.BOTH, expand=True)
+        
+        # Leaks text
+        leaks_text = scrolledtext.ScrolledText(
+            leaks_frame,
+            wrap=tk.WORD,
+            font=("Consolas", 9),
+            height=30
+        )
+        leaks_text.pack(fill=tk.BOTH, expand=True)
+        
+        # Stats text
+        stats_text = scrolledtext.ScrolledText(
+            stats_frame,
+            wrap=tk.WORD,
+            font=("Consolas", 10),
+            height=30
+        )
+        stats_text.pack(fill=tk.BOTH, expand=True)
+        
+        # Load initial data
+        self._load_attention_data(summary_text, leaks_text, stats_text)
+    
+    def _load_attention_data(self, summary_text, leaks_text, stats_text):
+        """Load attention leak data into text widgets"""
+        try:
+            # Get attention stats
+            stats = self.engine.get_attention_stats()
+            
+            # Display in summary
+            summary_text.delete('1.0', tk.END)
+            summary_text.insert(tk.END, "=== ATTENTION TRACKING STATISTICS ===\n\n", "header")
+            summary_text.insert(tk.END, f"Files Tracked: {stats.get('total_files_tracked', 0)}\n")
+            summary_text.insert(tk.END, f"Total Accesses: {stats.get('total_accesses', 0)}\n")
+            summary_text.insert(tk.END, f"Folder Switches (24h): {stats.get('folder_switches_today', 0)}\n")
+            summary_text.insert(tk.END, f"Last Analysis: {stats.get('last_analysis', 'Never')}\n\n")
+            summary_text.insert(tk.END, "Click 'Analyze Now' to run a full attention leak analysis.\n", "info")
+            
+            # Display stats
+            stats_text.delete('1.0', tk.END)
+            stats_text.insert(tk.END, "=== TRACKING STATISTICS ===\n\n")
+            for key, value in stats.items():
+                stats_text.insert(tk.END, f"{key}: {value}\n")
+            
+        except Exception as e:
+            summary_text.delete('1.0', tk.END)
+            summary_text.insert(tk.END, f"Error loading attention data: {e}\n")
+    
+    def _run_attention_analysis(self, summary_text, leaks_text, stats_text, analyze_btn):
+        """Run attention leak analysis"""
+        try:
+            analyze_btn.config(state=tk.DISABLED, text="Analyzing...")
+            self.root.update()
+            
+            # Get attention leak summary
+            summary = self.engine.get_attention_leaks()
+            
+            if not summary:
+                summary_text.delete('1.0', tk.END)
+                summary_text.insert(tk.END, "No attention leak data available yet.\n")
+                summary_text.insert(tk.END, "The system needs to track files for a while before analysis.\n")
+                return
+            
+            # Display summary
+            summary_text.delete('1.0', tk.END)
+            summary_text.insert(tk.END, "=== ATTENTION LEAK ANALYSIS SUMMARY ===\n\n", "header")
+            summary_text.insert(tk.END, f"Generated: {summary.get('timestamp', 'Unknown')}\n\n")
+            summary_text.insert(tk.END, f"Total Leaks Detected: {summary.get('total_leaks_detected', 0)}\n")
+            summary_text.insert(tk.END, f"Estimated Time Loss: {summary.get('total_estimated_time_loss_minutes', 0):.1f} minutes\n")
+            summary_text.insert(tk.END, f"Files Tracked: {summary.get('total_files_tracked', 0)}\n\n")
+            
+            # Severity breakdown
+            severity = summary.get('leaks_by_severity', {})
+            summary_text.insert(tk.END, "Severity Breakdown:\n")
+            summary_text.insert(tk.END, f"  🔴 High:   {severity.get('high', 0)}\n")
+            summary_text.insert(tk.END, f"  🟡 Medium: {severity.get('medium', 0)}\n")
+            summary_text.insert(tk.END, f"  🟢 Low:    {severity.get('low', 0)}\n\n")
+            
+            # Overall status
+            total_leaks = summary.get('total_leaks_detected', 0)
+            if total_leaks == 0:
+                summary_text.insert(tk.END, "✅ Status: Excellent - No attention leaks detected!\n\n")
+            elif severity.get('high', 0) > 0:
+                summary_text.insert(tk.END, "⚠️ Status: Action Required - High priority leaks detected\n\n")
+            elif severity.get('medium', 0) > 0:
+                summary_text.insert(tk.END, "🔔 Status: Room for Improvement\n\n")
+            else:
+                summary_text.insert(tk.END, "👍 Status: Good - Minor issues detected\n\n")
+            
+            # Display detailed leaks
+            leaks_text.delete('1.0', tk.END)
+            leaks_text.insert(tk.END, "=== DETAILED ATTENTION LEAKS ===\n\n")
+            
+            leaks = summary.get('leaks', [])
+            if leaks:
+                for i, leak in enumerate(leaks, 1):
+                    severity_icon = {'high': '🔴', 'medium': '🟡', 'low': '🟢'}.get(leak.get('severity'), '⚪')
+                    
+                    leaks_text.insert(tk.END, f"{i}. {leak.get('title', 'Unknown')}\n", "header")
+                    leaks_text.insert(tk.END, f"   Severity: {severity_icon} {leak.get('severity', 'unknown').upper()}\n")
+                    leaks_text.insert(tk.END, f"   Time Loss: {leak.get('estimated_time_loss_minutes', 0):.1f} minutes\n\n")
+                    leaks_text.insert(tk.END, f"   Description:\n   {leak.get('description', 'No description')}\n\n")
+                    
+                    affected = leak.get('affected_items', [])
+                    if affected:
+                        leaks_text.insert(tk.END, f"   Affected Items ({len(affected)} shown):\n")
+                        for item in affected[:10]:  # Show first 10
+                            leaks_text.insert(tk.END, f"   - {item}\n")
+                        leaks_text.insert(tk.END, "\n")
+                    
+                    leaks_text.insert(tk.END, f"   💡 Suggestion:\n   {leak.get('suggestion', 'No suggestion')}\n\n")
+                    leaks_text.insert(tk.END, "-" * 80 + "\n\n")
+            else:
+                leaks_text.insert(tk.END, "No attention leaks detected! Your workspace is well-organized. ✓\n")
+            
+            # Update stats
+            self._load_attention_data(summary_text, leaks_text, stats_text)
+            
+            messagebox.showinfo("Analysis Complete", 
+                              f"Found {total_leaks} attention leaks.\n"
+                              f"Estimated time loss: {summary.get('total_estimated_time_loss_minutes', 0):.1f} minutes")
+            
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to run analysis:\n{e}")
+        finally:
+            analyze_btn.config(state=tk.NORMAL, text="🔍 Analyze Now")
+    
+    def _export_attention_report(self):
+        """Export attention leak report"""
+        try:
+            from attention_report_generator import AttentionReportGenerator
+            
+            # Get summary
+            summary = self.engine.get_attention_leaks()
+            
+            if not summary or summary.get('total_leaks_detected', 0) == 0:
+                messagebox.showinfo("Info", "No attention leaks to report. Run analysis first.")
+                return
+            
+            # Generate report
+            generator = AttentionReportGenerator()
+            report_path = generator.generate_markdown_report(summary)
+            
+            messagebox.showinfo("Success", f"Report generated:\n{report_path}")
+            
+            # Open report
+            if messagebox.askyesno("Open Report?", "Would you like to open the report now?"):
+                os.startfile(report_path)
+                
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to export report:\n{e}")
+

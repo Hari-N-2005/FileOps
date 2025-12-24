@@ -14,7 +14,8 @@ from watchdog.events import FileSystemEventHandler, FileSystemEvent
 class FileChangeHandler(FileSystemEventHandler):
     """Handles file system events"""
     
-    def __init__(self, callback: Callable, stable_time: int = 2, logger=None):
+    def __init__(self, callback: Callable, stable_time: int = 2, logger=None, 
+                 access_callback: Callable = None):
         """
         Initialize file change handler
         
@@ -22,11 +23,13 @@ class FileChangeHandler(FileSystemEventHandler):
             callback: Function to call when a file is ready for processing
             stable_time: Time in seconds to wait before processing (ensures file is complete)
             logger: Logger instance
+            access_callback: Optional callback for file access events (for attention tracking)
         """
         super().__init__()
         self.callback = callback
         self.stable_time = stable_time
         self.logger = logger
+        self.access_callback = access_callback
         self.pending_files = {}  # Track files waiting to be processed
     
     def on_created(self, event: FileSystemEvent) -> None:
@@ -48,6 +51,14 @@ class FileChangeHandler(FileSystemEventHandler):
             return
         
         file_path = event.src_path
+        
+        # Track file access (modification often indicates file was opened)
+        if self.access_callback:
+            try:
+                self.access_callback(file_path)
+            except Exception as e:
+                if self.logger:
+                    self.logger.debug(f"Error in access callback: {e}")
         
         # Update timestamp for pending file
         if file_path in self.pending_files:
@@ -97,7 +108,7 @@ class FileWatcher:
     """Watches directories for file changes"""
     
     def __init__(self, directories: List[str], callback: Callable, 
-                 stable_time: int = 2, logger=None):
+                 stable_time: int = 2, logger=None, access_callback: Callable = None):
         """
         Initialize file watcher
         
@@ -106,13 +117,15 @@ class FileWatcher:
             callback: Function to call when a file is ready for processing
             stable_time: Time to wait before processing new files
             logger: Logger instance
+            access_callback: Optional callback for file access events (for attention tracking)
         """
         self.directories = directories
         self.callback = callback
         self.stable_time = stable_time
         self.logger = logger
+        self.access_callback = access_callback
         self.observer = Observer()
-        self.event_handler = FileChangeHandler(callback, stable_time, logger)
+        self.event_handler = FileChangeHandler(callback, stable_time, logger, access_callback)
         self.running = False
     
     def start(self) -> None:

@@ -16,6 +16,18 @@ build/
 logs/*.log
 logs/automation.log
 
+# Attention Leak Detector data and reports (user-specific tracking data)
+logs/attention_tracker.json
+logs/attention_reports/
+logs/demo_attention_tracker.json
+logs/demo_reports/
+logs/test_tracker.json
+logs/test_reports/
+
+# Detailed documentation files (not needed in repo)
+ATTENTION_LEAK_DETECTOR.md
+IMPLEMENTATION_SUMMARY.md
+
 # Configuration files (contain personal paths and usernames)
 config/config.yaml
 config/user_settings.txt
