@@ -7,9 +7,16 @@ import tkinter as tk
 from tkinter import ttk, scrolledtext, messagebox
 import threading
 import os
+import sys
 from datetime import datetime
 from pathlib import Path
 from typing import Optional
+try:
+    from PIL import Image
+    import pystray
+    TRAY_AVAILABLE = True
+except ImportError:
+    TRAY_AVAILABLE = False
 
 
 class AutomationDashboard:
@@ -23,23 +30,31 @@ class AutomationDashboard:
             engine_controller: Reference to the automation engine
         """
         self.engine = engine_controller
+        
+        # Set Windows taskbar icon (must be done before creating Tk window)
+        self._set_windows_taskbar_icon()
+        
         self.root = tk.Tk()
         self.root.title("Personal Automation Engine")
         self.root.geometry("900x650")
         self.root.minsize(800, 600)
         
         # Set icon if available
+        self.icon_path = None
         try:
             icon_path = Path(__file__).parent.parent / "assets" / "icon.ico"
             if icon_path.exists():
-                self.root.iconbitmap(icon_path)
-        except:
-            pass
+                self.root.iconbitmap(str(icon_path))
+                self.icon_path = str(icon_path)
+        except Exception as e:
+            print(f"Could not load icon: {e}")
         
         # Variables
         self.status_var = tk.StringVar(value="Stopped")
         self.files_processed_var = tk.StringVar(value="0")
         self.last_activity_var = tk.StringVar(value="None")
+        self.tray_icon = None
+        self.is_minimized_to_tray = False
         
         # Setup UI
         self._setup_ui()
@@ -308,10 +323,34 @@ class AutomationDashboard:
     def _on_closing(self):
         """Handle window close"""
         if self.engine.is_running():
-            if messagebox.askokcancel("Quit", "Engine is running. Stop and quit?"):
+            # Create custom dialog with three options
+            response = messagebox.askyesnocancel(
+                "Engine Running",
+                "Engine is running. What would you like to do?\n\n"
+                "• Yes: Stop engine and quit\n"
+                "• No: Minimize to system tray (engine keeps running)\n"
+                "• Cancel: Keep window open"
+            )
+            
+            if response is True:  # Yes - Stop and quit
                 self.engine.stop()
+                self._cleanup_tray()
                 self.root.destroy()
+            elif response is False:  # No - Minimize to tray
+                if TRAY_AVAILABLE:
+                    self._minimize_to_tray()
+                else:
+                    messagebox.showwarning(
+                        "System Tray Not Available",
+                        "System tray support not installed.\n"
+                        "Install: pip install pillow pystray\n\n"
+                        "Stopping engine and quitting..."
+                    )
+                    self.engine.stop()
+                    self.root.destroy()
+            # else: Cancel - do nothing
         else:
+            self._cleanup_tray()
             self.root.destroy()
     
     def _show_attention_insights(self):
@@ -319,6 +358,13 @@ class AutomationDashboard:
         insights_window = tk.Toplevel(self.root)
         insights_window.title("Attention Leak Insights")
         insights_window.geometry("1000x700")
+        
+        # Set icon for popup window
+        if self.icon_path:
+            try:
+                insights_window.iconbitmap(self.icon_path)
+            except:
+                pass
         
         # Main frame
         main_frame = ttk.Frame(insights_window, padding="10")
@@ -535,4 +581,96 @@ class AutomationDashboard:
                 
         except Exception as e:
             messagebox.showerror("Error", f"Failed to export report:\n{e}")
+    
+    def _set_windows_taskbar_icon(self):
+        """Set custom icon for Windows taskbar"""
+        try:
+            # Only works on Windows
+            if sys.platform == 'win32':
+                import ctypes
+                
+                # Get the absolute path to the icon
+                icon_path = Path(__file__).parent.parent / "assets" / "icon.ico"
+                
+                if icon_path.exists():
+                    # Set the AppUserModelID to make Windows treat this as a unique app
+                    myappid = 'FileOps.AutomationEngine.GUI.1.0'
+                    ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(myappid)
+        except Exception as e:
+            # Silently fail if icon setting doesn't work
+            pass
+    
+    def _minimize_to_tray(self):
+        """Minimize the application to system tray"""
+        if not TRAY_AVAILABLE:
+            return
+        
+        try:
+            # Hide the main window
+            self.root.withdraw()
+            self.is_minimized_to_tray = True
+            
+            # Load icon for system tray
+            icon_path = Path(__file__).parent.parent / "assets" / "icon.ico"
+            if icon_path.exists():
+                icon_image = Image.open(str(icon_path))
+            else:
+                # Create a simple default icon if file not found
+                icon_image = Image.new('RGB', (64, 64), color='blue')
+            
+            # Create system tray icon
+            menu = pystray.Menu(
+                pystray.MenuItem("Show Window", self._restore_from_tray),
+                pystray.MenuItem("Stop Engine & Quit", self._quit_from_tray)
+            )
+            
+            self.tray_icon = pystray.Icon(
+                "FileOps",
+                icon_image,
+                "FileOps Automation Engine\n(Running in background)",
+                menu
+            )
+            
+            # Run tray icon in separate thread
+            threading.Thread(target=self.tray_icon.run, daemon=True).start()
+            
+        except Exception as e:
+            print(f"Error minimizing to tray: {e}")
+            self.root.deiconify()
+    
+    def _restore_from_tray(self, icon=None, item=None):
+        """Restore window from system tray"""
+        self.is_minimized_to_tray = False
+        
+        # Stop the tray icon
+        if self.tray_icon:
+            self.tray_icon.stop()
+            self.tray_icon = None
+        
+        # Show the window
+        self.root.after(0, self.root.deiconify)
+    
+    def _quit_from_tray(self, icon=None, item=None):
+        """Quit application from system tray"""
+        # Stop the engine
+        if self.engine.is_running():
+            self.engine.stop()
+        
+        # Stop tray icon
+        if self.tray_icon:
+            self.tray_icon.stop()
+            self.tray_icon = None
+        
+        # Destroy the window
+        self.root.after(0, self.root.destroy)
+    
+    def _cleanup_tray(self):
+        """Clean up system tray icon if present"""
+        if self.tray_icon:
+            try:
+                self.tray_icon.stop()
+            except:
+                pass
+            self.tray_icon = None
+
 

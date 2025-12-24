@@ -94,7 +94,7 @@ class GUIEngineController:
                 self.backup_manager.schedule_backup()
             
             # Initialize attention leak report generator and scheduler
-            config_dict = self.config.config_data.get('attention_detector', {})
+            config_dict = self.config.config.get('attention_detector', {})
             if config_dict.get('enabled', True):
                 report_dir = config_dict.get('report_directory', 'logs/attention_reports')
                 self.attention_report_generator = AttentionReportGenerator(output_dir=report_dir)
